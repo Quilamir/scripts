@@ -1,0 +1,10 @@
+[Unit]
+Description=Restarter
+
+[Service]
+User=ubuntu # this user must have permissions to restart the erigon service
+ExecStart=/home/ubuntu/scripts/serviceRestart.sh 5 serviceName.service "telegram api token" "telegram chat id"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
