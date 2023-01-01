@@ -1,5 +1,16 @@
 #! /usr/bin/bash
+colred='\033[0;31m' # Red
+colgrn='\033[0;32m' # Green
+colylw='\033[0;33m' # Yellow
+colpur='\033[0;35m' # Purple
+colrst='\033[0m'    # Text Reset
 
+function llog() {
+        datestring=`date +"%Y-%m-%d %H:%M:%S"`
+        echo -e "$datestring - $@"
+}
+
+#initializing vars
 repeat=1
 
 regexBody="No block bodies to write in this log period block number"
@@ -25,28 +36,29 @@ MESSAGE="Restarting $serviceName on block"
 re='^[0-9]+$'
 if ! [[ $1 =~ $re ]]
 then
-        echo "error: Threshold Not a number" >&2; exit 1
+        llog "${colred}[ERROR]${colrst} Threshold is required to be positive integer"
+        exit 1
 fi
 
 if [[ -z "$serviceName" ]]
 then
-        echo "Service Name is required"
+        llog "${colred}[ERROR]${colrst} Service Name is required"
         exit 1
 fi
 
 if systemctl --all --type service | grep -q "$serviceName"
 then
-    echo "$serviceName exists."
+    llog "${colgrn}[INFO]}${colrst} Service $serviceName found"
 else
-    echo "$serviceName does NOT exist."
+    llog "${colred}[ERROR]${colrst} Service $serviceName not found"
     exit 1
 fi
 
 if [[ -z "$API_TOKEN" || -z "$CHAT_ID" ]]
 then
-    echo "Telegram alerts will be skipped"
+    llog "${colgrn}[INFO]}${colrst} Telegram alerts will be skipped"
 fi
-echo "starting to monitor $serviceName"
+llog "${colgrn}[INFO]}${colrst} Monitoring $serviceName"
 
 # starting service log listener
 journalctl -f -u $serviceName -o cat -n 0 |
@@ -56,7 +68,7 @@ do
     ((logAfterLinesCounter++))
     if [[ $logAfterLinesCounter -gt $logAfterLines ]]
     then
-        echo "$logAfterLines line: $line"
+        llog "${colgrn}[INFO]}${colrst} $logAfterLines log lines processed ping"
         logAfterLinesCounter=0
     fi
 
@@ -65,18 +77,18 @@ do
     then
         # get the block number
         blockNumber=${line#*$searchStr}
-        echo "grep triggered on block $blockNumber"
+        llog "${colylw}[WARN]}${colrst} triggered on block $blockNumber"
 
         # check if this is a repeat on this block number
         if [[ "$blockNumber" == "$currentBlock" ]]
         then
-                echo "repeat $repeat of $threshold detected on block $blockNumber"
+                llog "${colylw}[WARN]}${colrst} Repeat $repeat of $threshold detected on block $blockNumber"
                 ((repeat++))
 
                 # if this repeats too many times we want to alert and restart the service
                 if [[ $repeat -gt $threshold ]]
                 then
-                        echo "Restarting!!!"
+                        llog "${colpur}[INFO]}${colrst} Restarting!!!"
                         # reseting variables
                         repeat=1
 
@@ -86,15 +98,15 @@ do
                         # alert using telegram if params were given
                         if [[ ! -z "$API_TOKEN" && ! -z "$CHAT_ID" ]]
                         then
-                                echo "Sending telegram notification"
+                                llog "${colgrn}[INFO]}${colrst} Sending telegram notification"
                                 curl -s -X POST https://api.telegram.org/bot$API_TOKEN/sendMessage -d chat_id=$CHAT_ID -d text="$MESSAGE $blockNumber"
                         else
-                                echo "Skipping telegram"
+                                llog "${colgrn}[INFO]}${colrst} Skipping telegram"
                         fi
-                        echo "Service Restarted!!"
+                        llog "${colpur}[INFO]}${colrst} Service Restarted!!"
                 fi
         else
-                # first time for this block so we set new current block
+                # first time for this block so we set new current block and reset repeat counter
                 currentBlock=$blockNumber
                 repeat=1
         fi
