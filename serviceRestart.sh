@@ -10,29 +10,13 @@ function llog() {
         echo -e "$datestring - $@"
 }
 
-#initializing vars
-repeat=1
-
-regexBody="No block bodies to write in this log period block number"
-regexHeader="No block headers to write in this log period block number"
-
-currentBlock=""
-
-searchStr="="
-serviceName=$2
-
+#initializing cli params
 threshold=$1
+serviceName=$2
+tgApiToken=$3
+tgChatId=$4
 
-logAfterLines=100
-logAfterLinesCounter=0
-# Set the API token and chat ID
-API_TOKEN=$3
-CHAT_ID=$4
-
-# Set the message text
-MESSAGE="Restarting $serviceName on block"
-
-# check params
+# checking cli params
 re='^[0-9]+$'
 if ! [[ $1 =~ $re ]]
 then
@@ -54,13 +38,23 @@ else
     exit 1
 fi
 
-if [[ -z "$API_TOKEN" || -z "$CHAT_ID" ]]
+if [[ -z "$tgApiToken" || -z "$tgChatId" ]]
 then
     llog "${colgrn}[INFO]}${colrst} Telegram alerts will be skipped"
 fi
-llog "${colgrn}[INFO]}${colrst} Monitoring $serviceName"
+
+# initializing vars
+repeat=1
+regexBody="No block bodies to write in this log period block number"
+regexHeader="No block headers to write in this log period block number"
+currentBlock=""
+searchStr="="
+logAfterLines=100
+logAfterLinesCounter=0
+message="Restarting $serviceName on block"
 
 # starting service log listener
+llog "${colgrn}[INFO]}${colrst} Monitoring $serviceName"
 journalctl -f -u $serviceName -o cat -n 0 |
 while read line
 do
@@ -77,7 +71,7 @@ do
     then
         # get the block number
         blockNumber=${line#*$searchStr}
-        llog "${colylw}[WARN]}${colrst} triggered on block $blockNumber"
+        llog "${colylw}[WARN]}${colrst} Triggered on block $blockNumber"
 
         # check if this is a repeat on this block number
         if [[ "$blockNumber" == "$currentBlock" ]]
@@ -88,7 +82,7 @@ do
                 # if this repeats too many times we want to alert and restart the service
                 if [[ $repeat -gt $threshold ]]
                 then
-                        llog "${colpur}[INFO]}${colrst} Restarting!!!"
+                        llog "${colpur}[INFO]}${colrst} Restarting $serviceName !!"
                         # reseting variables
                         repeat=1
 
@@ -99,11 +93,11 @@ do
                         if [[ ! -z "$API_TOKEN" && ! -z "$CHAT_ID" ]]
                         then
                                 llog "${colgrn}[INFO]}${colrst} Sending telegram notification"
-                                curl -s -X POST https://api.telegram.org/bot$API_TOKEN/sendMessage -d chat_id=$CHAT_ID -d text="$MESSAGE $blockNumber"
+                                curl -s -X POST https://api.telegram.org/bot$tgApiToken/sendMessage -d chat_id=$tgChatId -d text="$message $blockNumber"
                         else
-                                llog "${colgrn}[INFO]}${colrst} Skipping telegram"
+                                llog "${colgrn}[INFO]}${colrst} Skipping Telegram"
                         fi
-                        llog "${colpur}[INFO]}${colrst} Service Restarted!!"
+                        llog "${colpur}[INFO]}${colrst} Service $serviceName Restarted !!"
                 fi
         else
                 # first time for this block so we set new current block and reset repeat counter
