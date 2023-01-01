@@ -90,7 +90,7 @@ do
                         sudo systemctl restart $serviceName
 
                         # alert using telegram if params were given
-                        if [[ ! -z "$API_TOKEN" && ! -z "$CHAT_ID" ]]
+                        if [[ ! -z "$tgApiToken" && ! -z "$tgChatId" ]]
                         then
                                 llog "${colgrn}[INFO]${colrst} Sending telegram notification"
                                 curl -s -X POST https://api.telegram.org/bot$tgApiToken/sendMessage -d chat_id=$tgChatId -d text="$message $blockNumber"
