@@ -60,7 +60,7 @@ llog "${colgrn}[INFO]${colrst} Monitoring $serviceName"
 journalctl -f -u $serviceName -o cat -n 0 |
 while read line
 do
-	# ouputting some lines of the service log to see this script is alive
+	# generate some logs periodically to show the script is running
 	((logAfterLinesCounter++))
 	if [[ $logAfterLinesCounter -gt $logAfterLines ]]
 	then
