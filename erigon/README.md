@@ -8,10 +8,10 @@ This script listens to the erigon service logs and detects if such a block is ca
 To use this script simply clone the repo and then install the attached service unit file erigonRestarter.service
 Make sure to update the execPath and the cli parameters in the service file before you run it.
 
-The first parameter is the repeat threshold - required integer
-The second parameter is the service name to monitor - required string
-The third parameter is the telegram token - optional string
-The fourth parameter is the telegram chat id - optional string
+- The first parameter is the repeat threshold - required integer
+- The second parameter is the service name to monitor - required string
+- The third parameter is the telegram token - optional string
+- The fourth parameter is the telegram chat id - optional string
 
 ```
 sudo cp erigonRestarter.service /etc/systemd/system
